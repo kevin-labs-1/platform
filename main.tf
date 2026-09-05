@@ -1,24 +1,12 @@
 terraform {
   required_version = "~> 1.16.0"
 
-  cloud {
-    organization = "kevin-labs"
-
-    workspaces {
-      name = "kevin-lol-service-sandbox"
-    }
-  }
-
   required_providers {
     google = {
       source  = "hashicorp/google"
       version = "7.23.0"
     }
   }
-}
-
-locals {
-  kevin_lol_service_hcp_project_id = "kevin-lol-service"
 }
 
 module "platform" {
