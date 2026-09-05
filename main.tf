@@ -1,0 +1,86 @@
+terraform {
+  required_version = "~> 1.16.0"
+
+  cloud {
+    organization = "kevin-labs"
+
+    workspaces {
+      name = "kevin-lol-service-sandbox"
+    }
+  }
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "7.23.0"
+    }
+  }
+}
+
+locals {
+  kevin_lol_service_hcp_project_id = "kevin-lol-service"
+}
+
+module "platform" {
+  source  = "terraform-google-modules/project-factory/google"
+  version = "~> 18.3"
+
+  name              = var.gcp_project_name
+  random_project_id = true
+  billing_account   = var.gcp_billing_account_id
+}
+
+resource "google_iam_workload_identity_pool" "default" {
+  project                   = module.platform.project_id
+  workload_identity_pool_id = var.wif_pool_id
+}
+
+resource "google_iam_workload_identity_pool_provider" "kevin_lol_service" {
+  project                            = module.platform.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.default.workload_identity_pool_id
+  workload_identity_pool_provider_id = "kevin-lol-service"
+
+  attribute_mapping = {
+    "google.subject" = "assertion.sub"
+  }
+
+  attribute_condition = "assertion.aud == \"https://app.terraform.io\" && assertion.terraform_organization_id == \"${var.hcp_organization_id}\" && assertion.terraform_project_id == \"${local.kevin_lol_service_hcp_project_id}\""
+
+  oidc {
+    issuer_uri = "https://app.terraform.io"
+  }
+}
+
+resource "google_service_account" "hcp_kevin_lol_service" {
+  project      = module.platform.project_id
+  account_id   = "kevin-lol-service"
+  display_name = "Kevin LOL Service"
+  description  = "Service account used by the Kevin LOL service."
+}
+
+module "kevin_lol_service_iam" {
+  source  = "terraform-google-modules/iam/google//modules/service_accounts_iam"
+  version = "~> 8.0"
+
+  service_accounts = [google_service_account.hcp_kevin_lol_service.email]
+  project          = module.platform.project_id
+  mode             = "authoritative"
+
+  bindings = {
+    "roles/cloudsql.admin" = [
+      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
+    ]
+
+    "roles/cloudrun.admin" = [
+      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
+    ]
+
+    "roles/secretmanager.admin" = [
+      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
+    ]
+
+    "roles/artifactregistry.admin" = [
+      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
+    ]
+  }
+}
