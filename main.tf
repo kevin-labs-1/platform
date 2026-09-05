@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+locals {
+  kevin_lol_service_hcp_project_id = "kevin-lol-service"
+}
+
 module "platform" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 18.3"
