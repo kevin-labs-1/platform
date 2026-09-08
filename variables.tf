@@ -15,9 +15,8 @@ variable "environment" {
 
 variable "app_identity_list" {
   type = map(object({
-    iam_roles                     = list(string)
-    workload_identity_provider_id = string
-    hcp_project_id                = string
+    hcp_project_id = string
+    iam_roles      = list(string)
   }))
 }
 

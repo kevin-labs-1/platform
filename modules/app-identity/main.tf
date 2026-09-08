@@ -24,17 +24,17 @@ resource "google_project_iam_member" "sa_roles" {
 
   project = var.project
   role    = each.value
-  member  = "serviceAccount:${google_service_account.default.email}"
+  member  = google_service_account.default.member
 }
 
 resource "google_organization_iam_member" "project_creator" {
   org_id = var.org_id
   role   = "roles/resourcemanager.projectCreator"
-  member = "serviceAccount:${google_service_account.default.email}"
+  member = google_service_account.default.member
 }
 
 resource "google_billing_account_iam_member" "billing_user" {
   billing_account_id = var.billing_account_id
   role               = "roles/billing.user"
-  member             = "serviceAccount:${google_service_account.default.email}"
+  member             = google_service_account.default.member
 }

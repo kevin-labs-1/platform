@@ -44,8 +44,6 @@ resource "google_iam_workload_identity_pool" "default" {
   workload_identity_pool_id = "hcp-identity-pool"
   display_name              = "HCP Identity Pool"
   description               = "Allows HCP to exchange OIDC tokens for Google Cloud access."
-
-  depends_on = [module.platform.enabled_apis]
 }
 
 module "app_identity" {
@@ -56,7 +54,7 @@ module "app_identity" {
   org_id                             = var.org_id
   billing_account_id                 = var.billing_account_id
   project                            = module.platform.project_id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.default.id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.default.workload_identity_pool_id
   workload_identity_pool_provider_id = each.value.hcp_project_id
   iam_roles                          = each.value.iam_roles
 
