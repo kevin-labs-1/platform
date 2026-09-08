@@ -1,6 +1,11 @@
 terraform {
   required_version = "~> 1.16.0"
 
+  cloud {
+    organization = "kevin-labs"
+    workspaces {}
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -10,15 +15,15 @@ terraform {
 }
 
 locals {
+  project_name = "platform-${var.environment}"
+
+  hcp_organization = "kevin-labs"
+
   required_apis = [
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "sts.googleapis.com",
-    "sqladmin.googleapis.com",
-    "run.googleapis.com",
-    "secretmanager.googleapis.com",
-    "artifactregistry.googleapis.com",
   ]
 }
 
@@ -26,77 +31,35 @@ module "platform" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 18.3"
 
-  name              = var.gcp_project_name
+  org_id            = var.org_id
+  name              = local.project_name
   random_project_id = true
-  billing_account   = var.gcp_billing_account_id
-}
-
-resource "google_project_service" "required_apis" {
-  for_each = toset(local.required_apis)
-
-  project = module.platform.project_id
-  service = each.value
-
-  disable_on_destroy = false
+  billing_account   = var.billing_account_id
+  activate_apis     = local.required_apis
+  deletion_policy   = var.deletion_policy
 }
 
 resource "google_iam_workload_identity_pool" "default" {
   project                   = module.platform.project_id
-  workload_identity_pool_id = var.wif_pool_id
-  display_name              = "Terraform Cloud Identity Pool"
-  description               = "Allows Terraform Cloud to exchange OIDC tokens for Google Cloud access."
+  workload_identity_pool_id = "hcp-identity-pool"
+  display_name              = "HCP Identity Pool"
+  description               = "Allows HCP to exchange OIDC tokens for Google Cloud access."
 
-  depends_on = [google_project_service.required_apis]
+  depends_on = [module.platform.enabled_apis]
 }
 
-resource "google_iam_workload_identity_pool_provider" "kevin_lol_service" {
+module "app_identity" {
+  source = "./modules/app-identity"
+
+  for_each = var.app_identity_list
+
+  org_id                             = var.org_id
+  billing_account_id                 = var.billing_account_id
   project                            = module.platform.project_id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.default.workload_identity_pool_id
-  workload_identity_pool_provider_id = var.workload_identity_provider_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.default.id
+  workload_identity_pool_provider_id = each.value.hcp_project_id
+  iam_roles                          = each.value.iam_roles
 
-  attribute_mapping = {
-    "google.subject" = "assertion.sub"
-  }
-
-  attribute_condition = "assertion.aud == \"https://app.terraform.io\" && assertion.terraform_organization_id == \"${var.hcp_organization_id}\" && assertion.terraform_project_id == \"${var.hcp_project_id}\""
-
-  oidc {
-    issuer_uri = "https://app.terraform.io"
-  }
-}
-
-resource "google_service_account" "hcp_kevin_lol_service" {
-  project      = module.platform.project_id
-  account_id   = var.service_account_id
-  display_name = "Kevin LOL Service"
-  description  = "Service account used by the Kevin LOL service."
-
-  depends_on = [google_project_service.required_apis]
-}
-
-module "kevin_lol_service_iam" {
-  source  = "terraform-google-modules/iam/google//modules/service_accounts_iam"
-  version = "~> 8.0"
-
-  service_accounts = [google_service_account.hcp_kevin_lol_service.email]
-  project          = module.platform.project_id
-  mode             = "authoritative"
-
-  bindings = {
-    "roles/cloudsql.admin" = [
-      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
-    ]
-
-    "roles/cloudrun.admin" = [
-      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
-    ]
-
-    "roles/secretmanager.admin" = [
-      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
-    ]
-
-    "roles/artifactregistry.admin" = [
-      "serviceAccount:${google_service_account.hcp_kevin_lol_service.email}",
-    ]
-  }
+  hcp_organization_id = local.hcp_organization
+  hcp_project_id      = each.value.hcp_project_id
 }

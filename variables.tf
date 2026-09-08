@@ -1,43 +1,28 @@
-variable "gcp_project_name" {
-  description = "Base name applied to the GCP project created by the project factory module."
+variable "org_id" {
   type        = string
-  default     = "kevin-lol-platform"
+  description = "The organization ID."
 }
 
-variable "gcp_billing_account_id" {
+variable "billing_account_id" {
+  type        = string
   description = "Billing account ID used to create the project."
-  type        = string
 }
 
-variable "wif_pool_id" {
-  description = "Workload identity pool ID used by Terraform Cloud."
-  type        = string
-
-  validation {
-    condition     = can(regex("^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$", var.wif_pool_id))
-    error_message = "The WIF pool ID must be 1-63 characters, start with a letter, and contain only lowercase letters, numbers, and dashes."
-  }
+variable "environment" {
+  type    = string
+  default = "sandbox"
 }
 
-variable "hcp_organization_id" {
-  description = "Terraform Cloud organization ID that is allowed to authenticate to the workload identity pool."
-  type        = string
+variable "app_identity_list" {
+  type = map(object({
+    iam_roles                     = list(string)
+    workload_identity_provider_id = string
+    hcp_project_id                = string
+  }))
 }
 
-variable "hcp_project_id" {
-  description = "Terraform Cloud project ID that is allowed to authenticate to the workload identity pool."
+variable "deletion_policy" {
   type        = string
-  default     = "kevin-lol-service"
-}
-
-variable "service_account_id" {
-  description = "Google Cloud service account ID to create for the Kevin LOL service."
-  type        = string
-  default     = "kevin-lol-service"
-}
-
-variable "workload_identity_provider_id" {
-  description = "Workload identity pool provider ID used for Terraform Cloud OIDC federation."
-  type        = string
-  default     = "kevin-lol-service"
+  description = "Whether to allow deletion of all provisioned resources. Can be 'PREVENT' or 'DELETE'."
+  default     = "PREVENT"
 }
