@@ -12,13 +12,6 @@ app_identity_list = {
       "roles/cloudsql.admin"
     ]
   }
-  "kevin_web_app" = {
-    workload_identity_provider_id = "kevin-lol-service"
-    hcp_project_id                = "kevin-web-app"
-    iam_roles = [
-      "roles/cloudsql.admin"
-    ]
-  }
 }
 
 deletion_policy = "PREVENT"
