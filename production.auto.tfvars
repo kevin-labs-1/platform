@@ -18,7 +18,6 @@ app_identity_list = {
     iam_roles = [
       "roles/cloudsql.admin"
     ]
-
   }
 }
 
