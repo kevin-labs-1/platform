@@ -9,50 +9,18 @@ terraform {
   }
 }
 
-locals {
-  project_name = "platform-${var.environment}"
+module "application_infrastructure" {
+  source = "./modules/application_infrastructure"
 
-  hcp_organization = "kevin-labs"
+  for_each = var.application_infrastructure
 
-  required_apis = [
-    "iam.googleapis.com",
-    "iamcredentials.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "sts.googleapis.com",
-  ]
-}
+  organization_id    = var.org_id
+  billing_account_id = var.billing_account_id
 
-module "platform" {
-  source  = "terraform-google-modules/project-factory/google"
-  version = "~> 18.3"
+  application_name = each.value.application_name
+  required_apis    = each.value.required_apis
+  iam_roles        = each.value.iam_roles
 
-  org_id            = var.org_id
-  name              = local.project_name
-  random_project_id = true
-  billing_account   = var.billing_account_id
-  activate_apis     = local.required_apis
-  deletion_policy   = var.deletion_policy
-}
-
-resource "google_iam_workload_identity_pool" "default" {
-  project                   = module.platform.project_id
-  workload_identity_pool_id = "hcp-identity-pool"
-  display_name              = "HCP Identity Pool"
-  description               = "Allows HCP to exchange OIDC tokens for Google Cloud access."
-}
-
-module "app_identity" {
-  source = "./modules/app-identity"
-
-  for_each = var.app_identity_list
-
-  org_id                             = var.org_id
-  billing_account_id                 = var.billing_account_id
-  project                            = module.platform.project_id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.default.workload_identity_pool_id
-  workload_identity_pool_provider_id = each.value.hcp_project_id
-  iam_roles                          = each.value.iam_roles
-
-  hcp_organization_id = local.hcp_organization
+  hcp_organization_id = each.value.hcp_organization_id
   hcp_project_id      = each.value.hcp_project_id
 }

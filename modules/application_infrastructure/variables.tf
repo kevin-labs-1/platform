@@ -1,11 +1,6 @@
-variable "org_id" {
+variable "organization_id" {
   type        = string
   description = "The Google Cloud organization ID where project creation permissions are granted"
-}
-
-variable "project" {
-  type        = string
-  description = "The ID of the GCP project to create all resources"
 }
 
 variable "billing_account_id" {
@@ -13,14 +8,14 @@ variable "billing_account_id" {
   description = "The billing account ID that can be linked to projects"
 }
 
-variable "workload_identity_pool_id" {
+variable "application_name" {
   type        = string
-  description = "The ID of an existing workload identity pool"
+  description = "The name of the application"
 }
 
-variable "workload_identity_pool_provider_id" {
-  type        = string
-  description = "The ID of the created workload identity provider for the given pool."
+variable "required_apis" {
+  type        = list(string)
+  description = "The list of APIs to enable in the created projects"
 }
 
 variable "iam_roles" {
