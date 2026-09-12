@@ -12,13 +12,3 @@ variable "environment" {
   type        = string
   description = "The environment to deploy to."
 }
-
-variable "application_infrastructure" {
-  type = map(object({
-    application_name    = string
-    required_apis       = list(string)
-    iam_roles           = list(string)
-    hcp_organization_id = string
-    hcp_project_id      = string
-  }))
-}

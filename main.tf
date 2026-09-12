@@ -15,18 +15,20 @@ resource "google_folder" "default" {
   deletion_protection = false
 }
 
-module "application_platform" {
-  source = "modules/application_platform"
+module "kevin_lol_service" {
+  source  = "terraform-google-modules/project-factory/google"
+  version = "~> 18.3"
 
-  for_each = var.application_infrastructure
-
-  parent             = google_folder.default.id
-  billing_account_id = var.billing_account_id
-
-  application_name = each.value.application_name
-  required_apis    = each.value.required_apis
-  iam_roles        = each.value.iam_roles
-
-  hcp_organization_id = each.value.hcp_organization_id
-  hcp_project_id      = each.value.hcp_project_id
+  folder_id       = google_folder.default.id
+  name            = "kevin-lol-service"
+  billing_account = var.billing_account_id
+  activate_apis = [
+    "compute.googleapis.com",
+    "cloudsql.googleapis.com",
+    "secretmanager.googleapis.com",
+    "cloudrun.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "cloudbuild.googleapis.com",
+  ]
+  deletion_policy = "DELETE"
 }
