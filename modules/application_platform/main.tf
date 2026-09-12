@@ -1,48 +1,40 @@
 resource "google_folder" "default" {
-  display_name = var.application_name
-  parent       = "organizations/${var.organization_id}"
+  display_name        = var.application_name
+  parent              = var.parent
+  deletion_protection = false
 }
 
 module "staging_project" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 18.3"
 
-  org_id            = var.organization_id
+  folder_id         = google_folder.default.id
+  random_project_id = true
   name              = "${var.application_name}-staging"
   billing_account   = var.billing_account_id
-  activate_apis     = var.required_apis
-  deletion_policy   = "PREVENT"
+  activate_apis     = concat(["compute.googleapis.com"], var.required_apis)
+  deletion_policy   = "DELETE"
 }
 
 module "production_project" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 18.3"
 
-  org_id            = var.organization_id
+  folder_id         = google_folder.default.id
+  random_project_id = true
   name              = "${var.application_name}-production"
   billing_account   = var.billing_account_id
-  activate_apis     = var.required_apis
-  deletion_policy   = "PREVENT"
-}
-
-module "workload_identity_project" {
-  source  = "terraform-google-modules/project-factory/google"
-  version = "~> 18.3"
-
-  org_id            = var.organization_id
-  name              = "${var.application_name}-workload"
-  billing_account   = var.billing_account_id
-  activate_apis     = ["iam.googleapis.com"]
-  deletion_policy   = "PREVENT"
+  activate_apis     = concat(["compute.googleapis.com"], var.required_apis)
+  deletion_policy   = "DELETE"
 }
 
 resource "google_iam_workload_identity_pool" "default" {
-  project                   = module.workload_identity_project.project_id
+  project                   = module.production_project.project_id
   workload_identity_pool_id = "${var.application_name}-hcp-project"
 }
 
 resource "google_iam_workload_identity_pool_provider" "default" {
-  project                            = module.workload_identity_project.project_id
+  project                            = module.production_project.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.default.workload_identity_pool_id
   workload_identity_pool_provider_id = "${var.application_name}-provider"
 
@@ -58,14 +50,14 @@ resource "google_iam_workload_identity_pool_provider" "default" {
 }
 
 resource "google_service_account" "default" {
-  project    = module.workload_identity_project.project_id
+  project    = module.production_project.project_id
   account_id = "some-account"
 }
 
 resource "google_project_iam_member" "default" {
   for_each = toset(var.iam_roles)
 
-  project = module.workload_identity_project.project_id
+  project = module.production_project.project_id
   role    = each.value
   member  = google_service_account.default.member
 }

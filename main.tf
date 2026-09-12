@@ -9,12 +9,18 @@ terraform {
   }
 }
 
-module "application_infrastructure" {
-  source = "./modules/application_infrastructure"
+resource "google_folder" "default" {
+  display_name        = "platform-${var.environment}"
+  parent              = "organizations/${var.org_id}"
+  deletion_protection = false
+}
+
+module "application_platform" {
+  source = "modules/application_platform"
 
   for_each = var.application_infrastructure
 
-  organization_id    = var.org_id
+  parent             = google_folder.default.id
   billing_account_id = var.billing_account_id
 
   application_name = each.value.application_name

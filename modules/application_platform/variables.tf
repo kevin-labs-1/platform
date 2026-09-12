@@ -1,6 +1,6 @@
-variable "organization_id" {
+variable "parent" {
   type        = string
-  description = "The Google Cloud organization ID where project creation permissions are granted"
+  description = "The location where permissions are granted"
 }
 
 variable "billing_account_id" {

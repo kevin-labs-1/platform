@@ -3,9 +3,11 @@ variables {
 
   billing_account_id = "01078F-424E09-DB32B3"
 
+  environment = "testing"
+
   application_infrastructure = {
     kevin_lol_service = {
-      application_name = "kevin-lol-service"
+      application_name = "lol-service"
       required_apis = [
         "cloudsql.googleapis.com"
       ]
@@ -20,7 +22,7 @@ variables {
 
 run "valid_folder_name" {
   assert {
-    condition     = module.application_infrastructure.service_account_email == "12"
+    condition     = module.application_platform.staging_project_id == "12"
     error_message = "folder has the wrong name"
   }
 }

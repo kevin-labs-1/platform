@@ -8,6 +8,11 @@ variable "billing_account_id" {
   description = "Billing account ID used to create the project."
 }
 
+variable "environment" {
+  type        = string
+  description = "The environment to deploy to."
+}
+
 variable "application_infrastructure" {
   type = map(object({
     application_name    = string
