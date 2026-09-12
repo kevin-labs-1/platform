@@ -9,19 +9,6 @@ variable "billing_account_id" {
 }
 
 variable "environment" {
-  type    = string
-  default = "sandbox"
-}
-
-variable "app_identity_list" {
-  type = map(object({
-    hcp_project_id = string
-    iam_roles      = list(string)
-  }))
-}
-
-variable "deletion_policy" {
   type        = string
-  description = "Whether to allow deletion of all provisioned resources. Can be 'PREVENT' or 'DELETE'."
-  default     = "PREVENT"
+  description = "The environment to deploy to."
 }
