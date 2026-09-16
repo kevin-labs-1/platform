@@ -10,9 +10,8 @@ terraform {
 }
 
 resource "google_folder" "default" {
-  display_name        = "platform-${var.environment}"
-  parent              = "organizations/${var.org_id}"
-  deletion_protection = false
+  display_name = "platform-${var.environment}"
+  parent       = "organizations/${var.org_id}"
 }
 
 module "kevin_lol_service" {
@@ -20,8 +19,9 @@ module "kevin_lol_service" {
   version = "~> 18.3"
 
   folder_id       = google_folder.default.id
-  name            = "kevin-lol-service"
   billing_account = var.billing_account_id
+  name            = "kevin-lol-service"
+
   activate_apis = [
     "compute.googleapis.com",
     "cloudsql.googleapis.com",
@@ -30,5 +30,4 @@ module "kevin_lol_service" {
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
   ]
-  deletion_policy = "DELETE"
 }
